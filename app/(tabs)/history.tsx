@@ -1,0 +1,247 @@
+import { View, Text, ScrollView, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { desc } from 'drizzle-orm';
+import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import { db } from '../../src/db/client';
+import { entries, type Entry } from '../../src/db/schema';
+import AreaChart from '../../src/components/AreaChart';
+import { getScoreColorThemed, getValueColor } from '../../src/lib/colors';
+
+function formatDate(dateStr: string): string {
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+  if (dateStr === todayKey) return 'Today';
+  if (dateStr === yesterdayKey) return 'Yesterday';
+
+  const [, month, day] = dateStr.split('-');
+  const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${months[parseInt(month, 10)]} ${parseInt(day, 10)}`;
+}
+
+const FACTORS = [
+  { key: 'sleep' as const, icon: 'moon-outline' as const, inverted: false },
+  { key: 'stress' as const, icon: 'thunderstorm-outline' as const, inverted: true },
+  { key: 'diet' as const, icon: 'nutrition-outline' as const, inverted: false },
+  { key: 'exercise' as const, icon: 'fitness-outline' as const, inverted: false },
+];
+
+function HistoryRow({ entry, index }: { entry: Entry; index: number }) {
+  const color = getScoreColorThemed(entry.score);
+
+  return (
+    <Animated.View
+      entering={FadeInDown.duration(400).delay(200 + index * 60)}
+      style={styles.historyCard}
+    >
+      <View style={styles.historyHeader}>
+        <Text style={styles.historyDate}>{formatDate(entry.date)}</Text>
+        <Text style={[styles.historyScore, { color }]}>{entry.score}</Text>
+      </View>
+      <View style={styles.factorRow}>
+        {FACTORS.map((f) => {
+          const val = entry[f.key];
+          const fColor = getValueColor(val, f.inverted);
+          return (
+            <View
+              key={f.key}
+              style={[
+                styles.factorChip,
+                {
+                  borderColor: `${fColor}20`,
+                  shadowColor: fColor,
+                },
+              ]}
+            >
+              <View style={styles.factorIconWrap}>
+                <View
+                  style={[
+                    styles.factorIconGlow,
+                    {
+                      backgroundColor: `${fColor}15`,
+                      shadowColor: fColor,
+                    },
+                  ]}
+                />
+                <Ionicons name={f.icon as any} size={14} color={fColor} />
+              </View>
+              <Text style={[styles.factorValue, { color: fColor }]}>{val}</Text>
+            </View>
+          );
+        })}
+      </View>
+    </Animated.View>
+  );
+}
+
+function EmptyState() {
+  const theme = UnistylesRuntime.getTheme();
+  return (
+    <View style={styles.emptyContainer}>
+      <Ionicons name="calendar-outline" size={48} color={theme.colors.textTertiary} />
+      <Text style={styles.emptyTitle}>No entries yet</Text>
+      <Text style={styles.emptySubtitle}>Log your first score to see trends here</Text>
+    </View>
+  );
+}
+
+export default function HistoryScreen() {
+  const insets = useSafeAreaInsets();
+  const { width: screenW } = useWindowDimensions();
+  const theme = UnistylesRuntime.getTheme();
+  const chartWidth = screenW - theme.spacing.lg * 2;
+
+  const { data: allEntries } = useLiveQuery(
+    db.select().from(entries).orderBy(desc(entries.date)).limit(30)
+  );
+
+  const historyData = allEntries ?? [];
+
+  return (
+    <View style={styles.screen}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 48, paddingBottom: 120 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View entering={FadeInDown.duration(600)}>
+          <Text style={styles.headerTitle}>WEEKLY</Text>
+          <Text style={styles.headerAccent}>TREND</Text>
+        </Animated.View>
+
+        {historyData.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <>
+            <Animated.View entering={FadeInDown.duration(500).delay(100)}>
+              <AreaChart data={historyData} width={chartWidth} />
+            </Animated.View>
+
+            <Text style={styles.sectionTitle}>Recent Entries</Text>
+
+            {historyData.map((entry, index) => (
+              <HistoryRow key={entry.date} entry={entry} index={index} />
+            ))}
+          </>
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create((theme) => ({
+  screen: {
+    flex: 1,
+    backgroundColor: theme.colors.bg,
+  },
+  scrollContent: {
+    paddingHorizontal: theme.spacing.lg,
+  },
+  headerTitle: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    ...theme.typography.headerLight,
+  },
+  headerAccent: {
+    fontSize: 36,
+    color: theme.colors.accent,
+    marginTop: 2,
+    ...theme.typography.headerLight,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    color: theme.colors.textSecondary,
+    fontWeight: '300',
+    letterSpacing: 3,
+    textTransform: 'uppercase',
+    marginBottom: theme.spacing.md,
+  },
+  historyCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.card,
+    borderCurve: 'continuous',
+    borderWidth: 0.5,
+    borderColor: theme.colors.surfaceBorder,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  historyDate: {
+    fontSize: 15,
+    color: theme.colors.text,
+    fontWeight: '400',
+  },
+  historyScore: {
+    fontSize: 28,
+    fontWeight: '200',
+    letterSpacing: -1,
+  },
+  factorRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  factorChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: theme.radius.chip,
+    borderCurve: 'continuous',
+    borderWidth: 0.5,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  factorIconWrap: {
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  factorIconGlow: {
+    ...({ position: 'absolute' } as const),
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  factorValue: {
+    fontSize: 14,
+    fontWeight: '300',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xxl,
+    gap: theme.spacing.sm,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    color: theme.colors.textSecondary,
+    fontWeight: '300',
+    marginTop: theme.spacing.sm,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: theme.colors.textTertiary,
+    fontWeight: '300',
+  },
+}));
