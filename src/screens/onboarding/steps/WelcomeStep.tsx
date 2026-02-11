@@ -56,8 +56,8 @@ const ws = StyleSheet.create((theme) => ({
     marginBottom: theme.spacing.xl, borderWidth: 0.5, borderColor: 'rgba(80,200,120,0.2)',
   },
   title: {
-    fontSize: 42, fontWeight: '200', letterSpacing: 6, color: '#FFFFFF',
-    marginBottom: theme.spacing.lg, lineHeight: 52,
+    fontSize: 34, fontWeight: '200', letterSpacing: 5, color: '#FFFFFF',
+    marginBottom: theme.spacing.lg, lineHeight: 44,
   },
   subtitle: {
     fontSize: 16, fontWeight: '400', color: theme.colors.textSecondary, lineHeight: 24, letterSpacing: 0.3,

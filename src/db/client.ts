@@ -68,6 +68,8 @@ export function clearAllData(): void {
 
 export function seedTestData(days: number = 14): void {
   const raw = getRawDb();
+  // Clear existing entries first so seed always works
+  raw.runSync('DELETE FROM entries');
   for (let i = days; i >= 1; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
@@ -81,9 +83,11 @@ export function seedTestData(days: number = 14): void {
     );
     const clampedScore = Math.min(100, Math.max(0, score));
     raw.runSync(
-      `INSERT OR IGNORE INTO entries (date, sleep, stress, diet, exercise, score, created_at)
+      `INSERT INTO entries (date, sleep, stress, diet, exercise, score, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [dateStr, sleep, stress, diet, exercise, clampedScore, Math.floor(d.getTime() / 1000)],
     );
   }
+  // Trigger change listener by touching the DB through expo-sqlite's change detection
+  raw.runSync('UPDATE entries SET score = score WHERE id = (SELECT MIN(id) FROM entries)');
 }

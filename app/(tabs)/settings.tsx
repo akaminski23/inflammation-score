@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { View, Text, ScrollView, Pressable, Alert, ActivityIndicator, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -6,8 +6,33 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles';
 import * as Haptics from 'expo-haptics';
+import * as Linking from 'expo-linking';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { getSetting, setSetting, deleteSetting, clearAllData, seedTestData } from '../../src/db/client';
 import { generateAndShareReport } from '../../src/services/ExportService';
+
+const PRIVACY_URL = 'https://akaminski23.github.io/inflammation-score/privacy.html';
+const TERMS_URL = 'https://akaminski23.github.io/inflammation-score/terms.html';
+
+function timeStringToDate(str: string): Date {
+  const [time, period] = str.split(' ');
+  const [hStr, mStr] = time.split(':');
+  let h = +hStr;
+  if (period === 'PM' && h !== 12) h += 12;
+  if (period === 'AM' && h === 12) h = 0;
+  const d = new Date();
+  d.setHours(h, +mStr, 0, 0);
+  return d;
+}
+
+function dateToTimeString(d: Date): string {
+  let h = d.getHours();
+  const m = d.getMinutes();
+  const period = h >= 12 ? 'PM' : 'AM';
+  if (h > 12) h -= 12;
+  if (h === 0) h = 12;
+  return `${h}:${m.toString().padStart(2, '0')} ${period}`;
+}
 
 const DEV_TAP_COUNT = 5;
 
@@ -92,6 +117,10 @@ export default function SettingsScreen() {
   const router = useRouter();
 
   const [reminders, setReminders] = useState(() => getSetting('reminders_enabled') === '1');
+  const [reminderTime, setReminderTime] = useState(() => getSetting('reminder_time') ?? '8:00 PM');
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const pickerDate = useMemo(() => timeStringToDate(reminderTime), [reminderTime]);
+  const [showAbout, setShowAbout] = useState(false);
   const [devMode, setDevMode] = useState(false);
   const [exporting, setExporting] = useState(false);
   const tapCount = useRef(0);
@@ -178,21 +207,73 @@ export default function SettingsScreen() {
         {/* General */}
         <Text style={st.sectionTitle}>GENERAL</Text>
 
-        <ToggleRow
-          icon="notifications-outline"
-          label="Daily Reminders"
-          subtitle="Get reminded to log your score"
-          value={reminders}
-          onToggle={handleReminderToggle}
-          delay={100}
-        />
+        <Animated.View entering={FadeInDown.duration(400).delay(100)}>
+          <View style={st.reminderCard}>
+            {/* Toggle row */}
+            <View style={st.reminderToggleRow}>
+              <View style={[st.rowIcon, { backgroundColor: `${theme.colors.accent}15` }]}>
+                <Ionicons name="notifications-outline" size={20} color={theme.colors.accent} />
+              </View>
+              <View style={st.rowContent}>
+                <Text style={st.rowLabel}>Daily Reminders</Text>
+                <Text style={st.rowSubtitle}>Get reminded to log your score</Text>
+              </View>
+              <Pressable
+                onPress={() => { Haptics.selectionAsync(); handleReminderToggle(!reminders); }}
+                hitSlop={8}
+              >
+                <View style={[st.toggle, reminders && { backgroundColor: theme.colors.accent }]}>
+                  <View style={[st.toggleThumb, reminders && { marginLeft: 16 }]} />
+                </View>
+              </Pressable>
+            </View>
 
-        <SettingsRow
-          icon="time-outline"
-          label="Reminder Time"
-          subtitle="8:00 PM"
-          delay={160}
-        />
+            {/* Divider */}
+            {reminders && <View style={st.reminderDivider} />}
+
+            {/* Time picker (only when reminders enabled) */}
+            {reminders && (
+              <View style={st.pickerWrap}>
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setShowTimePicker((v) => !v);
+                  }}
+                  style={st.timeLabel}
+                >
+                  <Ionicons name="time-outline" size={16} color={theme.colors.gold} />
+                  <Text style={st.timeLabelText}>{reminderTime}</Text>
+                  <Ionicons
+                    name={showTimePicker ? 'chevron-up' : 'chevron-down'}
+                    size={14}
+                    color={theme.colors.textTertiary}
+                  />
+                </Pressable>
+
+                {showTimePicker && (
+                  <View style={st.pickerContainer}>
+                    <DateTimePicker
+                      value={pickerDate}
+                      mode="time"
+                      display="spinner"
+                      minuteInterval={5}
+                      themeVariant="dark"
+                      accentColor="#D4AF37"
+                      onChange={(_, selected) => {
+                        if (selected) {
+                          Haptics.selectionAsync();
+                          const newTime = dateToTimeString(selected);
+                          setReminderTime(newTime);
+                          setSetting('reminder_time', newTime);
+                        }
+                      }}
+                    />
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        </Animated.View>
 
         {/* Data & Privacy */}
         <Text style={st.sectionTitle}>DATA & PRIVACY</Text>
@@ -229,6 +310,10 @@ export default function SettingsScreen() {
           icon="information-circle-outline"
           label="About"
           subtitle="Inflammation Score Tracker"
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setShowAbout(true);
+          }}
           delay={340}
         />
 
@@ -295,6 +380,96 @@ export default function SettingsScreen() {
             <Text style={st.overlayText}>Generating Report</Text>
           </View>
         </View>
+      </Modal>
+
+      {/* About Modal */}
+      <Modal visible={showAbout} transparent animationType="fade">
+        <Pressable style={st.overlayBg} onPress={() => setShowAbout(false)}>
+          <Pressable style={st.aboutCard} onPress={() => {}}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={st.aboutHeader}>
+                <View style={[st.rowIcon, { backgroundColor: `${theme.colors.accent}15`, width: 48, height: 48, borderRadius: 14 }]}>
+                  <Ionicons name="pulse" size={24} color={theme.colors.accent} />
+                </View>
+                <Text style={st.aboutAppName}>Inflammation Score</Text>
+                <Text style={st.aboutVersion}>Version 1.0.0</Text>
+              </View>
+
+              <Text style={st.aboutSectionTitle}>WHAT IS THIS APP?</Text>
+              <Text style={st.aboutBody}>
+                Inflammation Score is your daily wellness companion. It helps you track four key lifestyle factors — Sleep, Stress, Diet, and Exercise — and calculates a personalized wellness score from 0 to 100.
+              </Text>
+
+              <Text style={st.aboutSectionTitle}>HOW TO USE</Text>
+
+              <View style={st.aboutStep}>
+                <View style={[st.aboutStepDot, { backgroundColor: theme.colors.accent }]} />
+                <View style={st.aboutStepContent}>
+                  <Text style={st.aboutStepTitle}>Score Tab</Text>
+                  <Text style={st.aboutBody}>Rate your four daily factors using the sliders (1-10 each). Tap "Update Score" to save. Your overall wellness score updates instantly in the gauge above.</Text>
+                </View>
+              </View>
+
+              <View style={st.aboutStep}>
+                <View style={[st.aboutStepDot, { backgroundColor: theme.colors.gold }]} />
+                <View style={st.aboutStepContent}>
+                  <Text style={st.aboutStepTitle}>History Tab</Text>
+                  <Text style={st.aboutBody}>View your wellness trend over time with an interactive chart. Filter by individual factors to spot patterns. Tap any day to see the detailed breakdown.</Text>
+                </View>
+              </View>
+
+              <View style={st.aboutStep}>
+                <View style={[st.aboutStepDot, { backgroundColor: theme.colors.cyan }]} />
+                <View style={st.aboutStepContent}>
+                  <Text style={st.aboutStepTitle}>Settings Tab</Text>
+                  <Text style={st.aboutBody}>Set daily reminders, export PDF wellness reports, and manage your data. All your data is stored privately on your device — never shared.</Text>
+                </View>
+              </View>
+
+              <Text style={st.aboutSectionTitle}>SCORING GUIDE</Text>
+              <Text style={st.aboutBody}>
+                {'80-100  Excellent — keep it up\n60-79   Good — room for improvement\n40-59   Moderate — focus on weak areas\n20-39   Elevated — consider lifestyle changes\n0-19    High risk — consult a professional'}
+              </Text>
+
+              <Text style={st.aboutSectionTitle}>FACTORS EXPLAINED</Text>
+              <Text style={st.aboutBody}>
+                <Text style={{ fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>Sleep (1-10):</Text> Rate your sleep quality. 10 = restful, deep sleep.{'\n\n'}
+                <Text style={{ fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>Stress (1-10):</Text> Rate your calmness level. 10 = very calm, 1 = very stressed.{'\n\n'}
+                <Text style={{ fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>Diet (1-10):</Text> Rate your anti-inflammatory diet. 10 = whole foods, omega-3 rich.{'\n\n'}
+                <Text style={{ fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>Exercise (1-10):</Text> Rate your physical activity. 10 = intense workout.
+              </Text>
+
+              <Text style={st.aboutSectionTitle}>LEGAL</Text>
+              <View style={st.aboutLinks}>
+                <Pressable
+                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(PRIVACY_URL); }}
+                  style={st.aboutLinkRow}
+                >
+                  <Ionicons name="shield-checkmark-outline" size={16} color={theme.colors.textTertiary} />
+                  <Text style={st.aboutLinkText}>Privacy Policy</Text>
+                  <Ionicons name="open-outline" size={14} color={theme.colors.textTertiary} />
+                </Pressable>
+                <Pressable
+                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(TERMS_URL); }}
+                  style={st.aboutLinkRow}
+                >
+                  <Ionicons name="document-text-outline" size={16} color={theme.colors.textTertiary} />
+                  <Text style={st.aboutLinkText}>Terms of Service</Text>
+                  <Ionicons name="open-outline" size={14} color={theme.colors.textTertiary} />
+                </Pressable>
+              </View>
+
+              <Text style={st.aboutFooter}>Made with care for Wellness Warriors.</Text>
+            </ScrollView>
+
+            <Pressable
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowAbout(false); }}
+              style={st.aboutCloseBtn}
+            >
+              <Text style={st.aboutCloseBtnText}>Close</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
       </Modal>
     </View>
   );
@@ -452,5 +627,151 @@ const st = StyleSheet.create((theme) => ({
     fontWeight: '300',
     letterSpacing: 2,
     color: 'rgba(255,255,255,0.7)',
+  },
+
+  // --- Reminder Card ---
+  reminderCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.card,
+    borderCurve: 'continuous',
+    borderWidth: 0.5,
+    borderColor: theme.colors.surfaceBorder,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  reminderToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  reminderDivider: {
+    height: 0.5,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginVertical: 12,
+  },
+  pickerWrap: {
+    alignItems: 'center',
+  },
+  timeLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  timeLabelText: {
+    fontSize: 14,
+    fontWeight: '300',
+    color: theme.colors.gold,
+    letterSpacing: 0.5,
+  },
+  pickerContainer: {
+    marginTop: 4,
+    overflow: 'hidden',
+  },
+
+  // --- About Modal ---
+  aboutCard: {
+    backgroundColor: 'rgba(12,12,28,0.97)',
+    borderRadius: theme.radius.sheet,
+    borderCurve: 'continuous',
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.1)',
+    padding: theme.spacing.lg,
+    width: '90%',
+    maxHeight: '80%',
+  },
+  aboutHeader: {
+    alignItems: 'center',
+    marginBottom: theme.spacing.xl,
+    paddingBottom: theme.spacing.lg,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+  },
+  aboutAppName: {
+    fontSize: 20,
+    fontWeight: '300',
+    letterSpacing: 3,
+    color: '#FFFFFF',
+    marginTop: theme.spacing.md,
+  },
+  aboutVersion: {
+    fontSize: 12,
+    fontWeight: '300',
+    color: theme.colors.textTertiary,
+    marginTop: 4,
+  },
+  aboutSectionTitle: {
+    fontSize: 11,
+    fontWeight: '500',
+    letterSpacing: 3,
+    color: theme.colors.gold,
+    marginTop: theme.spacing.lg,
+    marginBottom: theme.spacing.sm,
+  },
+  aboutBody: {
+    fontSize: 13,
+    fontWeight: '300',
+    color: 'rgba(255,255,255,0.65)',
+    lineHeight: 20,
+    marginBottom: theme.spacing.sm,
+  },
+  aboutStep: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: theme.spacing.md,
+  },
+  aboutStepDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 5,
+    marginRight: theme.spacing.sm,
+  },
+  aboutStepContent: {
+    flex: 1,
+  },
+  aboutStepTitle: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  aboutLinks: {
+    gap: theme.spacing.sm,
+  },
+  aboutLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
+  },
+  aboutLinkText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '300',
+    color: 'rgba(255,255,255,0.6)',
+  },
+  aboutFooter: {
+    fontSize: 12,
+    fontWeight: '300',
+    color: 'rgba(255,255,255,0.25)',
+    textAlign: 'center',
+    marginTop: theme.spacing.xl,
+    letterSpacing: 0.5,
+  },
+  aboutCloseBtn: {
+    marginTop: theme.spacing.md,
+    paddingVertical: 14,
+    borderRadius: theme.radius.button,
+    borderCurve: 'continuous',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+  },
+  aboutCloseBtnText: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
 }));
