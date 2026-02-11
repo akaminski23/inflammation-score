@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles';
@@ -79,10 +79,6 @@ function AnimatedDot({
           animStyle,
           active && {
             backgroundColor: color,
-            shadowColor: color,
-            shadowOpacity: 0.6,
-            shadowRadius: 2,
-            shadowOffset: { width: 0, height: 0 },
           },
         ]}
       />
@@ -122,15 +118,6 @@ function SliderRow({
     <View style={styles.sliderCard}>
       <View style={styles.sliderHeader}>
         <Animated.View style={[styles.iconWrap, iconAnimStyle]}>
-          <View
-            style={[
-              styles.iconGlow,
-              {
-                backgroundColor: `${cardColor}18`,
-                shadowColor: cardColor,
-              },
-            ]}
-          />
           <Ionicons name={outlineIcon as any} size={22} color={cardColor} />
         </Animated.View>
         <View style={styles.sliderLabels}>
@@ -214,15 +201,19 @@ export default function ScoreScreen() {
       score,
     };
 
-    await db
-      .insert(entries)
-      .values(data)
-      .onConflictDoUpdate({
-        target: entries.date,
-        set: data,
-      });
+    try {
+      await db
+        .insert(entries)
+        .values(data)
+        .onConflictDoUpdate({
+          target: entries.date,
+          set: data,
+        });
 
-    setSubmitted(true);
+      setSubmitted(true);
+    } catch {
+      Alert.alert('Save Failed', 'Could not save your score. Please try again.');
+    }
   }, [scoreScale, todayKey, values, score]);
 
   return (
@@ -374,15 +365,6 @@ const styles = StyleSheet.create((theme) => ({
     height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  iconGlow: {
-    ...({ position: 'absolute' } as const),
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    shadowOpacity: 0.8,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 0 },
   },
   sliderLabels: {
     flex: 1,

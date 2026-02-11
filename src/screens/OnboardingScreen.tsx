@@ -19,6 +19,7 @@ import Animated, {
   withRepeat,
   withSequence,
   withDelay,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles';
 import * as Haptics from 'expo-haptics';
@@ -88,7 +89,7 @@ function MeshGradient({ screenW, screenH }: { screenW: number; screenH: number }
 
   useEffect(() => {
     const drift = (
-      sv: Animated.SharedValue<number>,
+      sv: SharedValue<number>,
       from: number,
       range: number,
       delay: number,
@@ -164,7 +165,7 @@ function PageDot({
   screenW,
 }: {
   index: number;
-  scrollX: Animated.SharedValue<number>;
+  scrollX: SharedValue<number>;
   screenW: number;
 }) {
   const theme = UnistylesRuntime.getTheme();
@@ -201,7 +202,7 @@ function Slide({
   page: (typeof PAGES)[number];
   index: number;
   screenW: number;
-  scrollX: Animated.SharedValue<number>;
+  scrollX: SharedValue<number>;
   topPadding: number;
 }) {
   const theme = UnistylesRuntime.getTheme();
@@ -328,7 +329,7 @@ function ButtonLabel({
   scrollX,
   screenW,
 }: {
-  scrollX: Animated.SharedValue<number>;
+  scrollX: SharedValue<number>;
   screenW: number;
 }) {
   const lastPageStart = (PAGES.length - 1) * screenW;

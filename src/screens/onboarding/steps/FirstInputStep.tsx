@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles';
 import * as Haptics from 'expo-haptics';
+import { getValueColor } from '../../../lib/colors';
 
 const QUICK_FACTORS = [
   { key: 'sleep', label: 'Sleep', icon: 'moon' as const, inverted: false },
@@ -12,16 +13,6 @@ const QUICK_FACTORS = [
   { key: 'diet', label: 'Diet', icon: 'nutrition' as const, inverted: false },
   { key: 'exercise', label: 'Exercise', icon: 'fitness' as const, inverted: false },
 ];
-
-function getValueColor(value: number, inverted: boolean): string {
-  const theme = UnistylesRuntime.getTheme();
-  const effective = inverted ? 11 - value : value;
-  if (effective >= 8) return theme.colors.scoreExcellent;
-  if (effective >= 6) return theme.colors.scoreGood;
-  if (effective >= 4) return theme.colors.scoreMedium;
-  if (effective >= 2) return theme.colors.scorePoor;
-  return theme.colors.scoreBad;
-}
 
 export default function FirstInputStep({ onNext }: { onNext: () => void }) {
   const insets = useSafeAreaInsets();

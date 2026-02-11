@@ -56,20 +56,10 @@ function HistoryRow({ entry, index }: { entry: Entry; index: number }) {
                 styles.factorChip,
                 {
                   borderColor: `${fColor}20`,
-                  shadowColor: fColor,
                 },
               ]}
             >
               <View style={styles.factorIconWrap}>
-                <View
-                  style={[
-                    styles.factorIconGlow,
-                    {
-                      backgroundColor: `${fColor}15`,
-                      shadowColor: fColor,
-                    },
-                  ]}
-                />
                 <Ionicons name={f.icon as any} size={14} color={fColor} />
               </View>
               <Text style={[styles.factorValue, { color: fColor }]}>{val}</Text>
@@ -205,24 +195,12 @@ const styles = StyleSheet.create((theme) => ({
     borderRadius: theme.radius.chip,
     borderCurve: 'continuous',
     borderWidth: 0.5,
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 0 },
   },
   factorIconWrap: {
     width: 20,
     height: 20,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  factorIconGlow: {
-    ...({ position: 'absolute' } as const),
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    shadowOpacity: 0.8,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 0 },
   },
   factorValue: {
     fontSize: 14,

@@ -14,9 +14,9 @@ import {
   withRepeat,
   withSequence,
   withDelay,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { StyleSheet } from 'react-native-unistyles';
-import type Animated from 'react-native-reanimated';
 
 export default function MeshGradient() {
   const { width: W, height: H } = useWindowDimensions();
@@ -47,7 +47,7 @@ export default function MeshGradient() {
   const b3y = useDerivedValue(() => b3cy.value);
 
   useEffect(() => {
-    const drift = (sv: Animated.SharedValue<number>, from: number, range: number, d: number) => {
+    const drift = (sv: SharedValue<number>, from: number, range: number, d: number) => {
       sv.value = withDelay(d, withRepeat(
         withSequence(
           withSpring(from + range, { damping: 50, stiffness: 6 }),

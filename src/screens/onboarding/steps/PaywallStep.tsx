@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { useState, useCallback, useMemo } from 'react';
+import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -9,13 +9,13 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles';
+import { StyleSheet } from 'react-native-unistyles';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
+import { useRevenueCat } from '../../../providers/RevenueCatProvider';
 
 const SPRING_SNAPPY = { damping: 15, stiffness: 250 };
 const GOLD = '#D4AF37';
-const BRONZE = '#A67C00';
 const SILVER = '#C0C0C8';
 
 const TERMS_URL = 'https://akaminski23.github.io/inflammation-score/terms.html';
@@ -23,33 +23,74 @@ const PRIVACY_URL = 'https://akaminski23.github.io/inflammation-score/privacy.ht
 
 type PlanId = 'monthly' | 'yearly' | 'lifetime';
 
-const PLANS: { id: PlanId; label: string; price: string; period: string; badge?: string }[] = [
-  { id: 'monthly', label: 'Monthly', price: '$14.99', period: '/mo' },
-  { id: 'yearly', label: 'Yearly', price: '$44.99', period: '/yr', badge: 'SAVE 53%' },
-  { id: 'lifetime', label: 'Lifetime', price: '$149.99', period: 'once' },
-];
-
 const TIMELINE = [
   { label: 'Today', desc: 'Unlock everything', gold: true },
   { label: 'Day 5', desc: 'Reminder sent', gold: false },
   { label: 'Day 7', desc: 'Billing starts', gold: true },
 ];
 
+const PLAN_MAP: Record<PlanId, { label: string; period: string; fallbackPrice: string; badge?: string }> = {
+  monthly: { label: 'Monthly', period: '/mo', fallbackPrice: '$14.99' },
+  yearly: { label: 'Yearly', period: '/yr', fallbackPrice: '$44.99', badge: 'SAVE 53%' },
+  lifetime: { label: 'Lifetime', period: 'once', fallbackPrice: '$149.99' },
+};
+
 export default function PaywallStep({ onNext }: { onNext: () => void }) {
   const insets = useSafeAreaInsets();
-  const theme = UnistylesRuntime.getTheme();
+  const { offerings, purchase, restorePurchases, loading } = useRevenueCat();
   const [selected, setSelected] = useState<PlanId>('yearly');
 
   const btnScale = useSharedValue(1);
   const btnStyle = useAnimatedStyle(() => ({ transform: [{ scale: btnScale.value }] }));
 
-  const handleSubscribe = () => {
+  // Map RevenueCat packages to plan IDs
+  const packages = useMemo(() => {
+    const map: Partial<Record<PlanId, { price: string; pkg: any }>> = {};
+    if (offerings?.monthly) {
+      map.monthly = { price: offerings.monthly.product.priceString, pkg: offerings.monthly };
+    }
+    if (offerings?.annual) {
+      map.yearly = { price: offerings.annual.product.priceString, pkg: offerings.annual };
+    }
+    if (offerings?.lifetime) {
+      map.lifetime = { price: offerings.lifetime.product.priceString, pkg: offerings.lifetime };
+    }
+    return map;
+  }, [offerings]);
+
+  const plans = useMemo(() => {
+    return (['monthly', 'yearly', 'lifetime'] as PlanId[]).map((id) => ({
+      id,
+      ...PLAN_MAP[id],
+      price: packages[id]?.price ?? PLAN_MAP[id].fallbackPrice,
+    }));
+  }, [packages]);
+
+  const handleSubscribe = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     btnScale.value = withSpring(0.93, SPRING_SNAPPY, () => {
       btnScale.value = withSpring(1, SPRING_SNAPPY);
     });
-    // TODO: RevenueCat purchase flow here
-    setTimeout(onNext, 200);
+
+    const selectedPkg = packages[selected]?.pkg;
+    if (!selectedPkg) {
+      // No offerings loaded — skip paywall
+      setTimeout(onNext, 200);
+      return;
+    }
+
+    const success = await purchase(selectedPkg);
+    if (success) {
+      onNext();
+    }
+  };
+
+  const handleRestore = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const success = await restorePurchases();
+    if (success) {
+      onNext();
+    }
   };
 
   const handleSkip = () => {
@@ -90,7 +131,7 @@ export default function PaywallStep({ onNext }: { onNext: () => void }) {
 
         {/* Pricing Cards */}
         <Animated.View entering={FadeInUp.duration(500).delay(240)} style={pw.plans}>
-          {PLANS.map((plan) => {
+          {plans.map((plan) => {
             const active = selected === plan.id;
             return (
               <Pressable
@@ -129,19 +170,24 @@ export default function PaywallStep({ onNext }: { onNext: () => void }) {
         <Animated.View style={btnStyle}>
           <Pressable
             onPress={handleSubscribe}
-            style={({ pressed }) => [pw.ctaButton, pressed && { opacity: 0.9 }]}
+            disabled={loading}
+            style={({ pressed }) => [pw.ctaButton, pressed && { opacity: 0.9 }, loading && { opacity: 0.6 }]}
           >
-            <Text style={pw.ctaText}>Start My 7-Day Free Trial</Text>
+            {loading ? (
+              <ActivityIndicator color="#0A0A1A" />
+            ) : (
+              <Text style={pw.ctaText}>Start My 7-Day Free Trial</Text>
+            )}
           </Pressable>
         </Animated.View>
 
-        <Pressable onPress={handleSkip} hitSlop={12}>
+        <Pressable onPress={handleSkip} hitSlop={12} disabled={loading}>
           <Text style={pw.skipText}>Maybe later</Text>
         </Pressable>
 
         {/* Footer links */}
         <View style={pw.footer}>
-          <Pressable hitSlop={8}><Text style={pw.footerLink}>Restore Purchases</Text></Pressable>
+          <Pressable hitSlop={8} onPress={handleRestore} disabled={loading}><Text style={pw.footerLink}>Restore Purchases</Text></Pressable>
           <Text style={pw.footerDivider}>|</Text>
           <Pressable hitSlop={8} onPress={() => openLink(PRIVACY_URL)}>
             <Text style={pw.footerLink}>Privacy Policy</Text>

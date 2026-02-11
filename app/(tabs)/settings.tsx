@@ -10,6 +10,7 @@ import * as Linking from 'expo-linking';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getSetting, setSetting, deleteSetting, clearAllData, seedTestData } from '../../src/db/client';
 import { generateAndShareReport } from '../../src/services/ExportService';
+import { useRevenueCat } from '../../src/providers/RevenueCatProvider';
 
 const PRIVACY_URL = 'https://akaminski23.github.io/inflammation-score/privacy.html';
 const TERMS_URL = 'https://akaminski23.github.io/inflammation-score/terms.html';
@@ -116,6 +117,8 @@ export default function SettingsScreen() {
   const theme = UnistylesRuntime.getTheme();
   const router = useRouter();
 
+  const { isPro, restorePurchases, loading: rcLoading } = useRevenueCat();
+
   const [reminders, setReminders] = useState(() => getSetting('reminders_enabled') === '1');
   const [reminderTime, setReminderTime] = useState(() => getSetting('reminder_time') ?? '8:00 PM');
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -171,8 +174,9 @@ export default function SettingsScreen() {
       await generateAndShareReport();
     } catch (err: any) {
       Alert.alert('Export Failed', err.message ?? 'Could not generate report.');
+    } finally {
+      setExporting(false);
     }
-    setExporting(false);
   }, []);
 
   const handleClearData = useCallback(() => {
@@ -203,6 +207,49 @@ export default function SettingsScreen() {
           <Text style={st.headerTitle}>APP</Text>
           <Text style={st.headerAccent}>SETTINGS</Text>
         </Animated.View>
+
+        {/* Subscription */}
+        <Text style={st.sectionTitle}>SUBSCRIPTION</Text>
+
+        <Animated.View entering={FadeInDown.duration(400).delay(60)}>
+          <View style={st.subscriptionCard}>
+            <View style={st.subscriptionHeader}>
+              <View style={[st.rowIcon, { backgroundColor: isPro ? `${theme.colors.gold}15` : `${theme.colors.textTertiary}15` }]}>
+                <Ionicons name={isPro ? 'diamond' : 'diamond-outline'} size={20} color={isPro ? theme.colors.gold : theme.colors.textTertiary} />
+              </View>
+              <View style={st.rowContent}>
+                <Text style={st.rowLabel}>{isPro ? 'Pro' : 'Free'}</Text>
+                <Text style={st.rowSubtitle}>{isPro ? 'All features unlocked' : 'Upgrade to unlock all features'}</Text>
+              </View>
+              {isPro && (
+                <View style={[st.devBadge, { backgroundColor: `${theme.colors.gold}20` }]}>
+                  <Text style={[st.devBadgeText, { color: theme.colors.gold }]}>PRO</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </Animated.View>
+
+        <SettingsRow
+          icon="refresh-outline"
+          label="Restore Purchases"
+          subtitle={rcLoading ? 'Restoring...' : 'Recover previous purchases'}
+          onPress={() => {
+            if (!rcLoading) restorePurchases();
+          }}
+          delay={80}
+        />
+
+        <SettingsRow
+          icon="card-outline"
+          label="Manage Subscription"
+          subtitle="Change or cancel in App Store"
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            Linking.openURL('https://apps.apple.com/account/subscriptions');
+          }}
+          delay={100}
+        />
 
         {/* General */}
         <Text style={st.sectionTitle}>GENERAL</Text>
@@ -627,6 +674,21 @@ const st = StyleSheet.create((theme) => ({
     fontWeight: '300',
     letterSpacing: 2,
     color: 'rgba(255,255,255,0.7)',
+  },
+
+  // --- Subscription Card ---
+  subscriptionCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.card,
+    borderCurve: 'continuous',
+    borderWidth: 0.5,
+    borderColor: theme.colors.surfaceBorder,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  subscriptionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 
   // --- Reminder Card ---

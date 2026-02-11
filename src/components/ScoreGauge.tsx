@@ -5,7 +5,6 @@ import {
   Path,
   Skia,
   SweepGradient,
-  BlurMask,
   vec,
 } from '@shopify/react-native-skia';
 import {
@@ -88,20 +87,6 @@ export default function ScoreGauge({
         strokeCap="round"
         color="rgba(255,255,255,0.05)"
       />
-
-      {/* Glow layer */}
-      <Path
-        path={fullArcPath}
-        style="stroke"
-        strokeWidth={strokeWidth + 8}
-        strokeCap="round"
-        color={color}
-        opacity={0.3}
-        start={0}
-        end={end}
-      >
-        <BlurMask blur={15} style="normal" />
-      </Path>
 
       {/* Main arc with gradient */}
       <Path
