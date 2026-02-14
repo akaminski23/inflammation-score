@@ -18,10 +18,10 @@ const SPRING_SNAPPY = { damping: 15, stiffness: 250 };
 const GOLD = '#D4AF37';
 const SILVER = '#C0C0C8';
 
-const TERMS_URL = 'https://akaminski23.github.io/inflammation-score/terms.html';
+const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 const PRIVACY_URL = 'https://akaminski23.github.io/inflammation-score/privacy.html';
 
-type PlanId = 'monthly' | 'yearly' | 'lifetime';
+type PlanId = 'monthly' | 'yearly';
 
 const TIMELINE = [
   { label: 'Today', desc: 'Unlock everything', gold: true },
@@ -32,7 +32,6 @@ const TIMELINE = [
 const PLAN_MAP: Record<PlanId, { label: string; period: string; fallbackPrice: string; badge?: string }> = {
   monthly: { label: 'Monthly', period: '/mo', fallbackPrice: '$14.99' },
   yearly: { label: 'Yearly', period: '/yr', fallbackPrice: '$44.99', badge: 'SAVE 53%' },
-  lifetime: { label: 'Lifetime', period: 'once', fallbackPrice: '$149.99' },
 };
 
 export default function PaywallStep({ onNext }: { onNext: () => void }) {
@@ -52,14 +51,11 @@ export default function PaywallStep({ onNext }: { onNext: () => void }) {
     if (offerings?.annual) {
       map.yearly = { price: offerings.annual.product.priceString, pkg: offerings.annual };
     }
-    if (offerings?.lifetime) {
-      map.lifetime = { price: offerings.lifetime.product.priceString, pkg: offerings.lifetime };
-    }
     return map;
   }, [offerings]);
 
   const plans = useMemo(() => {
-    return (['monthly', 'yearly', 'lifetime'] as PlanId[]).map((id) => ({
+    return (['monthly', 'yearly'] as PlanId[]).map((id) => ({
       id,
       ...PLAN_MAP[id],
       price: packages[id]?.price ?? PLAN_MAP[id].fallbackPrice,
@@ -194,7 +190,7 @@ export default function PaywallStep({ onNext }: { onNext: () => void }) {
           </Pressable>
           <Text style={pw.footerDivider}>|</Text>
           <Pressable hitSlop={8} onPress={() => openLink(TERMS_URL)}>
-            <Text style={pw.footerLink}>Terms of Service</Text>
+            <Text style={pw.footerLink}>Terms of Use (EULA)</Text>
           </Pressable>
         </View>
       </Animated.View>

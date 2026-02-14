@@ -38,7 +38,12 @@
       "@react-native-community/datetimepicker"
     ],
     "extra": {
-      "privacyPolicyUrl": "https://akaminski23.github.io/inflammation-score/privacy.html"
-    }
+      "privacyPolicyUrl": "https://akaminski23.github.io/inflammation-score/privacy.html",
+      "router": {},
+      "eas": {
+        "projectId": "0950f92b-10a5-4786-98e2-a0843496c119"
+      }
+    },
+    "owner": "akaminski23"
   }
 }

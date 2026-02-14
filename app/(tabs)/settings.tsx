@@ -13,7 +13,7 @@ import { generateAndShareReport } from '../../src/services/ExportService';
 import { useRevenueCat } from '../../src/providers/RevenueCatProvider';
 
 const PRIVACY_URL = 'https://akaminski23.github.io/inflammation-score/privacy.html';
-const TERMS_URL = 'https://akaminski23.github.io/inflammation-score/terms.html';
+const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 
 function timeStringToDate(str: string): Date {
   const [time, period] = str.split(' ');
@@ -501,7 +501,7 @@ export default function SettingsScreen() {
                   style={st.aboutLinkRow}
                 >
                   <Ionicons name="document-text-outline" size={16} color={theme.colors.textTertiary} />
-                  <Text style={st.aboutLinkText}>Terms of Service</Text>
+                  <Text style={st.aboutLinkText}>Terms of Use (EULA)</Text>
                   <Ionicons name="open-outline" size={14} color={theme.colors.textTertiary} />
                 </Pressable>
               </View>
