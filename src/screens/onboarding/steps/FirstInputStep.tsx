@@ -9,7 +9,7 @@ import { getValueColor } from '../../../lib/colors';
 
 const QUICK_FACTORS = [
   { key: 'sleep', label: 'Sleep', icon: 'moon' as const, inverted: false },
-  { key: 'stress', label: 'Stress', icon: 'thunderstorm' as const, inverted: false },
+  { key: 'stress', label: 'Stress', icon: 'thunderstorm' as const, inverted: true },
   { key: 'diet', label: 'Diet', icon: 'nutrition' as const, inverted: false },
   { key: 'exercise', label: 'Exercise', icon: 'fitness' as const, inverted: false },
 ];
