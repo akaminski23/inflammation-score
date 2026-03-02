@@ -486,6 +486,11 @@ export default function SettingsScreen() {
                 <Text style={{ fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>Exercise (1-10):</Text> Rate your physical activity. 10 = intense workout.
               </Text>
 
+              <Text style={st.aboutSectionTitle}>MEDICAL DISCLAIMER</Text>
+              <Text style={st.aboutBody}>
+                Inflammation Score is a wellness lifestyle tracker for informational purposes only. It is not a medical device and is not intended to diagnose, treat, cure, or prevent any disease or medical condition. Always consult a qualified healthcare professional before making any health-related decisions.
+              </Text>
+
               <Text style={st.aboutSectionTitle}>LEGAL</Text>
               <View style={st.aboutLinks}>
                 <Pressable

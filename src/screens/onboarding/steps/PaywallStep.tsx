@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -70,8 +70,11 @@ export default function PaywallStep({ onNext }: { onNext: () => void }) {
 
     const selectedPkg = packages[selected]?.pkg;
     if (!selectedPkg) {
-      // No offerings loaded — skip paywall
-      setTimeout(onNext, 200);
+      // Offerings not loaded — inform user, do not bypass paywall
+      Alert.alert(
+        'Unable to Load Plans',
+        'Could not connect to the App Store. Please check your internet connection and try again.',
+      );
       return;
     }
 
@@ -176,6 +179,17 @@ export default function PaywallStep({ onNext }: { onNext: () => void }) {
             )}
           </Pressable>
         </Animated.View>
+
+        {/* Subscription disclosure — REQUIRED by Apple 3.1.2 */}
+        <Text style={pw.disclosure}>
+          {selected === 'yearly'
+            ? `7-day free trial, then ${packages.yearly?.price ?? '$44.99'}/year. `
+            : `7-day free trial, then ${packages.monthly?.price ?? '$14.99'}/month. `}
+          {'Payment will be charged to your Apple ID account at confirmation of purchase. ' +
+            'Subscription automatically renews unless cancelled at least 24 hours before the end of the current period. ' +
+            'Your account will be charged for renewal within 24 hours prior to the end of the current period. ' +
+            'Manage or cancel your subscription in App Store \u203a Account \u203a Subscriptions.'}
+        </Text>
 
         <Pressable onPress={handleSkip} hitSlop={12} disabled={loading}>
           <Text style={pw.skipText}>Maybe later</Text>
@@ -365,6 +379,14 @@ const pw = StyleSheet.create((theme) => ({
     fontWeight: '600',
     color: '#0A0A1A',
     letterSpacing: 0.3,
+  },
+  disclosure: {
+    fontSize: 10,
+    fontWeight: '300',
+    color: 'rgba(255,255,255,0.4)',
+    textAlign: 'center',
+    lineHeight: 14,
+    paddingHorizontal: 8,
   },
   skipText: {
     fontSize: 14,

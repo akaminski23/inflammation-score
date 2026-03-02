@@ -35,6 +35,10 @@ export default function WelcomeStep({ onNext }: { onNext: () => void }) {
         <Animated.Text entering={FadeInUp.duration(600).delay(350)} style={ws.subtitle}>
           Your daily anti-inflammatory lifestyle tracker. Understand what drives inflammation in your body.
         </Animated.Text>
+
+        <Animated.Text entering={FadeInUp.duration(600).delay(500)} style={ws.disclaimer}>
+          For wellness tracking only. Not a medical device and not intended to diagnose, treat, or prevent any medical condition. Consult a healthcare professional for medical advice.
+        </Animated.Text>
       </View>
 
       <Animated.View style={scaleStyle}>
@@ -61,6 +65,9 @@ const ws = StyleSheet.create((theme) => ({
   },
   subtitle: {
     fontSize: 16, fontWeight: '400', color: theme.colors.textSecondary, lineHeight: 24, letterSpacing: 0.3,
+  },
+  disclaimer: {
+    fontSize: 11, fontWeight: '300', color: 'rgba(255,255,255,0.25)', lineHeight: 16, letterSpacing: 0.2, marginTop: 16,
   },
   button: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.sm,

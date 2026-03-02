@@ -36,9 +36,9 @@ const CX = CANVAS_SIZE / 2;
 
 const MESSAGES = [
   'Syncing lifestyle logs...',
-  'Analyzing inflammation patterns...',
-  'Identifying wellness correlations...',
-  'Personalized plan ready.',
+  'Calculating your wellness baseline...',
+  'Identifying daily habits to track...',
+  'Your score tracker is ready.',
 ];
 const MSG_INTERVAL = 1200;
 const AUTO_ADVANCE = MESSAGES.length * MSG_INTERVAL;
