@@ -1,14 +1,19 @@
-import { View, Text, ScrollView, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, UnistylesRuntime } from 'react-native-unistyles';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { desc } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { db } from '../../src/db/client';
 import { entries, type Entry } from '../../src/db/schema';
 import AreaChart from '../../src/components/AreaChart';
 import { getScoreColorThemed, getValueColor } from '../../src/lib/colors';
+import { useRevenueCat } from '../../src/providers/RevenueCatProvider';
+
+const FREE_LIMIT = 3;
 
 function formatDate(dateStr: string): string {
   const today = new Date();
@@ -71,6 +76,52 @@ function HistoryRow({ entry, index }: { entry: Entry; index: number }) {
   );
 }
 
+function ChartPaywall({ onUpgrade }: { onUpgrade: () => void }) {
+  return (
+    <Animated.View entering={FadeInDown.duration(500).delay(100)} style={styles.chartPaywall}>
+      <View style={styles.chartPaywallIcon}>
+        <Ionicons name="analytics-outline" size={40} color="rgba(212,175,55,0.6)" />
+      </View>
+      <Text style={styles.chartPaywallTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+        Unlock Your Trend Chart
+      </Text>
+      <Text style={styles.chartPaywallDesc} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>
+        See how your inflammation score changes over time with detailed visual insights.
+      </Text>
+      <Pressable
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onUpgrade();
+        }}
+        style={styles.chartPaywallBtn}
+      >
+        <Ionicons name="sparkles" size={16} color="#0A0A1A" />
+        <Text style={styles.chartPaywallBtnText} numberOfLines={1}>Start Free Trial</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+function HistoryPaywallRow({ count, onUpgrade }: { count: number; onUpgrade: () => void }) {
+  return (
+    <Animated.View entering={FadeInDown.duration(400).delay(400)} style={styles.historyPaywallRow}>
+      <Ionicons name="lock-closed" size={16} color="#D4AF37" />
+      <Text style={styles.historyPaywallText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+        {count} more {count === 1 ? 'entry' : 'entries'} with Pro
+      </Text>
+      <Pressable
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onUpgrade();
+        }}
+        hitSlop={8}
+      >
+        <Text style={styles.historyPaywallLink} numberOfLines={1}>Unlock</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 function EmptyState() {
   const theme = UnistylesRuntime.getTheme();
   return (
@@ -86,6 +137,8 @@ export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
   const { width: screenW } = useWindowDimensions();
   const theme = UnistylesRuntime.getTheme();
+  const router = useRouter();
+  const { isPro } = useRevenueCat();
   const chartWidth = screenW - theme.spacing.lg * 2;
 
   const { data: allEntries } = useLiveQuery(
@@ -93,6 +146,12 @@ export default function HistoryScreen() {
   );
 
   const historyData = allEntries ?? [];
+  const visibleEntries = isPro ? historyData : historyData.slice(0, FREE_LIMIT);
+  const hiddenCount = isPro ? 0 : Math.max(0, historyData.length - FREE_LIMIT);
+
+  const handleUpgrade = () => {
+    router.push('/paywall');
+  };
 
   return (
     <View style={styles.screen}>
@@ -112,15 +171,23 @@ export default function HistoryScreen() {
           <EmptyState />
         ) : (
           <>
-            <Animated.View entering={FadeInDown.duration(500).delay(100)}>
-              <AreaChart data={historyData} width={chartWidth} />
-            </Animated.View>
+            {isPro ? (
+              <Animated.View entering={FadeInDown.duration(500).delay(100)}>
+                <AreaChart data={historyData} width={chartWidth} />
+              </Animated.View>
+            ) : (
+              <ChartPaywall onUpgrade={handleUpgrade} />
+            )}
 
             <Text style={styles.sectionTitle}>Recent Entries</Text>
 
-            {historyData.map((entry, index) => (
+            {visibleEntries.map((entry, index) => (
               <HistoryRow key={entry.date} entry={entry} index={index} />
             ))}
+
+            {hiddenCount > 0 && (
+              <HistoryPaywallRow count={hiddenCount} onUpgrade={handleUpgrade} />
+            )}
           </>
         )}
       </ScrollView>
@@ -221,5 +288,83 @@ const styles = StyleSheet.create((theme) => ({
     fontSize: 13,
     color: theme.colors.textTertiary,
     fontWeight: '300',
+  },
+  chartPaywall: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.card,
+    borderCurve: 'continuous',
+    borderWidth: 0.5,
+    borderColor: 'rgba(212,175,55,0.20)',
+    padding: 24,
+    marginTop: theme.spacing.lg,
+    marginBottom: theme.spacing.xl,
+    alignItems: 'center',
+  },
+  chartPaywallIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(212,175,55,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  chartPaywallTitle: {
+    fontSize: 20,
+    fontWeight: '300',
+    color: theme.colors.text,
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  chartPaywallDesc: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  chartPaywallBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#D4AF37',
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: theme.radius.button,
+    borderCurve: 'continuous',
+    minWidth: 200,
+  },
+  chartPaywallBtnText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#0A0A1A',
+    letterSpacing: 0.5,
+  },
+  historyPaywallRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(212,175,55,0.06)',
+    borderRadius: theme.radius.card,
+    borderCurve: 'continuous',
+    borderWidth: 0.5,
+    borderColor: 'rgba(212,175,55,0.15)',
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  historyPaywallText: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: theme.colors.textSecondary,
+    flex: 1,
+  },
+  historyPaywallLink: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#D4AF37',
+    letterSpacing: 0.5,
   },
 }));

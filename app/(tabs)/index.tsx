@@ -16,7 +16,9 @@ import { db } from '../../src/db/client';
 import { entries } from '../../src/db/schema';
 import ScoreGauge from '../../src/components/ScoreGauge';
 import RollingNumber from '../../src/components/ui/RollingNumber';
+import { useRouter } from 'expo-router';
 import { getScoreColorThemed, getValueColor } from '../../src/lib/colors';
+import { useRevenueCat } from '../../src/providers/RevenueCatProvider';
 
 const FACTORS = [
   { key: 'sleep', label: 'Sleep Quality', icon: 'moon' as const, description: 'How well did you sleep?', inverted: false },
@@ -146,6 +148,8 @@ function SliderRow({
 export default function ScoreScreen() {
   const insets = useSafeAreaInsets();
   const theme = UnistylesRuntime.getTheme();
+  const router = useRouter();
+  const { isPro } = useRevenueCat();
   const todayKey = getTodayKey();
 
   const { data: todayEntries } = useLiveQuery(
@@ -225,9 +229,23 @@ export default function ScoreScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeInDown.duration(600).delay(0)}>
-          <Text style={styles.headerTitle}>INFLAMMATION</Text>
-          <Text style={[styles.headerScore, { color: scoreColor }]}>SCORE</Text>
+        <Animated.View entering={FadeInDown.duration(600).delay(0)} style={styles.headerRow}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>INFLAMMATION</Text>
+            <Text style={[styles.headerScore, { color: scoreColor }]}>SCORE</Text>
+          </View>
+          {!isPro && (
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/paywall');
+              }}
+              style={styles.upgradeBtn}
+            >
+              <Ionicons name="sparkles" size={16} color="#D4AF37" />
+              <Text style={styles.upgradeBtnText}>Upgrade</Text>
+            </Pressable>
+          )}
         </Animated.View>
 
         <Animated.View
@@ -295,6 +313,32 @@ const styles = StyleSheet.create((theme) => ({
   },
   scrollContent: {
     paddingHorizontal: theme.spacing.lg,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  upgradeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(212,175,55,0.12)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: theme.radius.chip,
+    borderCurve: 'continuous',
+    borderWidth: 0.5,
+    borderColor: 'rgba(212,175,55,0.25)',
+  },
+  upgradeBtnText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#D4AF37',
+    letterSpacing: 0.5,
   },
   headerTitle: {
     fontSize: 14,
