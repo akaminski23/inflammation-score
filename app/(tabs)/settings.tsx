@@ -346,7 +346,7 @@ export default function SettingsScreen() {
               <Ionicons name="document-text-outline" size={20} color={theme.colors.gold} />
               <View style={st.pdfButtonText}>
                 <Text style={[st.pdfLabel, { color: theme.colors.gold }]}>Generate PDF Health Report</Text>
-                <Text style={st.pdfSubtitle}>Empire-grade wellness summary</Text>
+                <Text style={st.pdfSubtitle}>Share your wellness report as PDF</Text>
               </View>
               <Ionicons name="share-outline" size={16} color={theme.colors.textTertiary} />
             </View>
@@ -473,7 +473,7 @@ export default function SettingsScreen() {
                 <View style={[st.aboutStepDot, { backgroundColor: theme.colors.gold }]} />
                 <View style={st.aboutStepContent}>
                   <Text style={st.aboutStepTitle}>History Tab</Text>
-                  <Text style={st.aboutBody}>View your wellness trend over time with an interactive chart. Filter by individual factors to spot patterns. Tap any day to see the detailed breakdown.</Text>
+                  <Text style={st.aboutBody}>View your wellness trend over time with an interactive chart. Long-press the chart to see scores for each day. Full history and chart require Pro.</Text>
                 </View>
               </View>
 
