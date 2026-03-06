@@ -373,7 +373,7 @@ const st = StyleSheet.create((theme) => ({
   },
   tooltip: {
     ...({ position: 'absolute' } as const),
-    backgroundColor: 'rgba(0,20,50,0.75)',
+    backgroundColor: 'rgba(12,12,28,0.92)',
     borderRadius: theme.radius.chip,
     borderCurve: 'continuous',
     borderWidth: 0.5,

@@ -493,7 +493,7 @@ export default function SettingsScreen() {
               <Text style={st.aboutSectionTitle}>FACTORS EXPLAINED</Text>
               <Text style={st.aboutBody}>
                 <Text style={{ fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>Sleep (1-10):</Text> Rate your sleep quality. 10 = restful, deep sleep.{'\n\n'}
-                <Text style={{ fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>Stress (1-10):</Text> Rate your calmness level. 10 = very calm, 1 = very stressed.{'\n\n'}
+                <Text style={{ fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>Stress (1-10):</Text> Rate your stress level. 1 = calm, 10 = very stressed.{'\n\n'}
                 <Text style={{ fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>Diet (1-10):</Text> Rate your anti-inflammatory diet. 10 = whole foods, omega-3 rich.{'\n\n'}
                 <Text style={{ fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>Exercise (1-10):</Text> Rate your physical activity. 10 = intense workout.
               </Text>

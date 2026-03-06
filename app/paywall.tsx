@@ -39,10 +39,13 @@ const s = StyleSheet.create((theme) => ({
   closeBtn: {
     position: 'absolute',
     right: 16,
-    zIndex: 10,
+    zIndex: 50,
     width: 44,
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: 22,
+    borderCurve: 'continuous',
   },
 }));
