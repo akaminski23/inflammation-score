@@ -212,22 +212,34 @@ export default function SettingsScreen() {
         <Text style={st.sectionTitle}>SUBSCRIPTION</Text>
 
         <Animated.View entering={FadeInDown.duration(400).delay(60)}>
-          <View style={st.subscriptionCard}>
-            <View style={st.subscriptionHeader}>
-              <View style={[st.rowIcon, { backgroundColor: isPro ? `${theme.colors.gold}15` : `${theme.colors.textTertiary}15` }]}>
-                <Ionicons name={isPro ? 'diamond' : 'diamond-outline'} size={20} color={isPro ? theme.colors.gold : theme.colors.textTertiary} />
-              </View>
-              <View style={st.rowContent}>
-                <Text style={st.rowLabel}>{isPro ? 'Pro' : 'Free'}</Text>
-                <Text style={st.rowSubtitle}>{isPro ? 'All features unlocked' : 'Upgrade to unlock all features'}</Text>
-              </View>
-              {isPro && (
-                <View style={[st.devBadge, { backgroundColor: `${theme.colors.gold}20` }]}>
-                  <Text style={[st.devBadgeText, { color: theme.colors.gold }]}>PRO</Text>
+          <Pressable
+            onPress={() => {
+              if (!isPro) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                router.push('/paywall');
+              }
+            }}
+            style={({ pressed }) => [pressed && !isPro && { opacity: 0.7 }]}
+          >
+            <View style={st.subscriptionCard}>
+              <View style={st.subscriptionHeader}>
+                <View style={[st.rowIcon, { backgroundColor: isPro ? `${theme.colors.gold}15` : `${theme.colors.textTertiary}15` }]}>
+                  <Ionicons name={isPro ? 'diamond' : 'diamond-outline'} size={20} color={isPro ? theme.colors.gold : theme.colors.textTertiary} />
                 </View>
-              )}
+                <View style={st.rowContent}>
+                  <Text style={st.rowLabel}>{isPro ? 'Pro' : 'Free'}</Text>
+                  <Text style={st.rowSubtitle}>{isPro ? 'All features unlocked' : 'Upgrade to unlock all features'}</Text>
+                </View>
+                {isPro ? (
+                  <View style={[st.devBadge, { backgroundColor: `${theme.colors.gold}20` }]}>
+                    <Text style={[st.devBadgeText, { color: theme.colors.gold }]}>PRO</Text>
+                  </View>
+                ) : (
+                  <Ionicons name="chevron-forward" size={16} color={theme.colors.textTertiary} />
+                )}
+              </View>
             </View>
-          </View>
+          </Pressable>
         </Animated.View>
 
         <SettingsRow

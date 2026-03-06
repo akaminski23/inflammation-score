@@ -3,6 +3,7 @@ import { View, Text } from 'react-native';
 import {
   Canvas,
   Path,
+  Line as SkiaLine,
   LinearGradient,
   Circle,
   BlurMask,
@@ -23,7 +24,9 @@ import { getScoreColor, getScoreColorAlpha } from '../lib/colors';
 
 const CHART_H = 180;
 const PAD = 20;
+const PAD_LEFT = 32;
 const PAD_TOP = 24;
+const Y_TICKS = [0, 25, 50, 75, 100];
 const SPRING_SNAPPY = { damping: 15, stiffness: 250 };
 
 interface Props {
@@ -59,7 +62,7 @@ function formatLabel(dateStr: string): string {
 }
 
 export default function AreaChart({ data, width }: Props) {
-  const plotW = width - PAD * 2;
+  const plotW = width - PAD_LEFT - PAD;
   const plotH = CHART_H - PAD_TOP - PAD;
 
   // Last 7, oldest first
@@ -69,7 +72,7 @@ export default function AreaChart({ data, width }: Props) {
     if (chartEntries.length < 2) return [];
     const step = plotW / (chartEntries.length - 1);
     return chartEntries.map((e, i) => ({
-      x: PAD + i * step,
+      x: PAD_LEFT + i * step,
       y: PAD_TOP + plotH - (e.score / 100) * plotH,
       score: e.score,
       date: e.date,
@@ -181,7 +184,37 @@ export default function AreaChart({ data, width }: Props) {
   return (
     <View style={st.container}>
       {/* Skia canvas */}
+      {/* Y-axis labels (RN Text, positioned absolutely) */}
+      <View style={st.yLabelsWrap} pointerEvents="none">
+        {Y_TICKS.map((tick) => {
+          const yPos = PAD_TOP + plotH - (tick / 100) * plotH;
+          return (
+            <Text
+              key={tick}
+              style={[st.yLabel, { top: yPos - 6 }]}
+              numberOfLines={1}
+            >
+              {tick}
+            </Text>
+          );
+        })}
+      </View>
+
       <Canvas style={{ width, height: CHART_H }}>
+        {/* Horizontal guide lines */}
+        {Y_TICKS.map((tick) => {
+          const yPos = PAD_TOP + plotH - (tick / 100) * plotH;
+          return (
+            <SkiaLine
+              key={tick}
+              p1={vec(PAD_LEFT, yPos)}
+              p2={vec(width - PAD, yPos)}
+              color="rgba(255,255,255,0.06)"
+              strokeWidth={0.5}
+            />
+          );
+        })}
+
         {/* Gradient fill under line — score-colored */}
         <Path path={fill}>
           <LinearGradient
@@ -269,7 +302,7 @@ export default function AreaChart({ data, width }: Props) {
       </GestureDetector>
 
       {/* X-axis date labels */}
-      <View style={[st.labels, { paddingHorizontal: PAD }]}>
+      <View style={[st.labels, { paddingLeft: PAD_LEFT, paddingRight: PAD }]}>
         {pts.map((p, i) => (
           <Text
             key={i}
@@ -360,6 +393,23 @@ const st = StyleSheet.create((theme) => ({
     color: 'rgba(255,255,255,0.5)',
     letterSpacing: 0.5,
     marginTop: 2,
+  },
+  yLabelsWrap: {
+    ...({ position: 'absolute' } as const),
+    top: 0,
+    left: 0,
+    bottom: 0,
+    width: PAD_LEFT,
+    zIndex: 10,
+  },
+  yLabel: {
+    ...({ position: 'absolute' } as const),
+    left: 4,
+    fontSize: 9,
+    fontFamily: 'SFMono-Regular',
+    fontWeight: '300',
+    color: theme.colors.textTertiary,
+    letterSpacing: -0.5,
   },
   labels: {
     flexDirection: 'row',

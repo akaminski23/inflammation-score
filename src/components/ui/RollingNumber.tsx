@@ -29,7 +29,7 @@ function RollingDigit({ digit, fontSize, color, digitHeight }: RollingDigitProps
   }));
 
   return (
-    <View style={{ height: digitHeight, overflow: 'hidden', width: fontSize * 0.62 }}>
+    <View style={{ height: digitHeight, overflow: 'hidden', width: fontSize * 0.7 }}>
       <Animated.View style={animStyle}>
         {DIGITS.map((d) => (
           <Text

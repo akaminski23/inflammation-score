@@ -20,7 +20,7 @@ import { getScoreColorThemed, getValueColor } from '../../src/lib/colors';
 
 const FACTORS = [
   { key: 'sleep', label: 'Sleep Quality', icon: 'moon' as const, description: 'How well did you sleep?', inverted: false },
-  { key: 'stress', label: 'Stress Level', icon: 'thunderstorm' as const, description: '1 = very stressed, 10 = calm', inverted: true },
+  { key: 'stress', label: 'Stress Level', icon: 'thunderstorm' as const, description: '1 = calm, 10 = very stressed', inverted: true },
   { key: 'diet', label: 'Diet Quality', icon: 'nutrition' as const, description: 'How anti-inflammatory was your diet?', inverted: false },
   { key: 'exercise', label: 'Exercise', icon: 'fitness' as const, description: 'How active were you?', inverted: false },
 ] as const;
@@ -331,7 +331,7 @@ const styles = StyleSheet.create((theme) => ({
     fontSize: 14,
     color: theme.colors.textTertiary,
     fontWeight: '300',
-    marginTop: -4,
+    marginTop: 4,
   },
   scoreLabel: {
     fontSize: 16,

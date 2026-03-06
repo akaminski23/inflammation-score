@@ -4,6 +4,7 @@ import Purchases, {
   CustomerInfo,
   PurchasesPackage,
   PURCHASES_ERROR_CODE,
+  LOG_LEVEL,
 } from 'react-native-purchases';
 import { Alert, Platform } from 'react-native';
 
@@ -34,6 +35,7 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
     const init = async () => {
       try {
         if (Platform.OS === 'ios') {
+          Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.WARN);
           Purchases.configure({ apiKey: API_KEY_IOS });
         }
 
@@ -43,9 +45,13 @@ export function RevenueCatProvider({ children }: { children: ReactNode }) {
         const offs = await Purchases.getOfferings();
         if (offs.current) {
           setOfferings(offs.current);
+        } else if (__DEV__) {
+          console.warn('[RevenueCat] No current offering found. Check RevenueCat dashboard.');
         }
       } catch (error) {
-        // Don't block UI on init failure
+        if (__DEV__) {
+          console.error('[RevenueCat] Init error:', error);
+        }
       } finally {
         setIsReady(true);
       }
