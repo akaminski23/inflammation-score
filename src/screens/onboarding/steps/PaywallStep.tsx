@@ -204,7 +204,7 @@ export default function PaywallStep({ onNext }: { onNext: () => void }) {
           </Pressable>
           <Text style={pw.footerDivider}>|</Text>
           <Pressable hitSlop={8} onPress={() => openLink(TERMS_URL)}>
-            <Text style={pw.footerLink}>Terms of Use (EULA)</Text>
+            <Text style={pw.footerLink}>Terms of Use</Text>
           </Pressable>
         </View>
       </Animated.View>

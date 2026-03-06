@@ -518,7 +518,7 @@ export default function SettingsScreen() {
                   style={st.aboutLinkRow}
                 >
                   <Ionicons name="document-text-outline" size={16} color={theme.colors.textTertiary} />
-                  <Text style={st.aboutLinkText}>Terms of Use (EULA)</Text>
+                  <Text style={st.aboutLinkText}>Terms of Use</Text>
                   <Ionicons name="open-outline" size={14} color={theme.colors.textTertiary} />
                 </Pressable>
               </View>
