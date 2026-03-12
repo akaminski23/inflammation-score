@@ -8,7 +8,7 @@ import Purchases, {
 } from 'react-native-purchases';
 import { Alert, Platform } from 'react-native';
 
-const API_KEY_IOS = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '';
+const API_KEY_IOS = 'appl_VDGyanUlhKvPsnEERrGhHoOefxS';
 const ENTITLEMENT_ID = 'Inflammation Score Pro';
 
 interface RevenueCatContextType {
