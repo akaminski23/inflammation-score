@@ -29,6 +29,12 @@ const TIMELINE = [
   { label: 'Day 7', desc: 'Billing starts', gold: true },
 ];
 
+const PRO_BENEFITS = [
+  { icon: 'time-outline' as const, text: 'Unlimited inflammation history' },
+  { icon: 'analytics-outline' as const, text: 'Trend chart & insights' },
+  { icon: 'calendar-outline' as const, text: 'Track patterns over time' },
+];
+
 const PLAN_MAP: Record<PlanId, { label: string; period: string; fallbackPrice: string; badge?: string }> = {
   monthly: { label: 'Monthly', period: '/mo', fallbackPrice: '$14.99' },
   yearly: { label: 'Yearly', period: '/yr', fallbackPrice: '$44.99', badge: 'SAVE 53%' },
@@ -113,8 +119,20 @@ export default function PaywallStep({ onNext }: { onNext: () => void }) {
           Reclaim Your Life{'\n'}from Discomfort
         </Animated.Text>
 
+        {/* Pro Benefits */}
+        <Animated.View entering={FadeInUp.duration(500).delay(120)} style={pw.benefits}>
+          {PRO_BENEFITS.map((item, i) => (
+            <View key={i} style={pw.benefitRow}>
+              <View style={pw.benefitIcon}>
+                <Ionicons name={item.icon} size={18} color={GOLD} />
+              </View>
+              <Text style={pw.benefitText}>{item.text}</Text>
+            </View>
+          ))}
+        </Animated.View>
+
         {/* Trial Timeline */}
-        <Animated.View entering={FadeInUp.duration(500).delay(120)} style={pw.timeline}>
+        <Animated.View entering={FadeInUp.duration(500).delay(240)} style={pw.timeline}>
           {TIMELINE.map((step, i) => (
             <View key={i} style={pw.timelineStep}>
               <View style={pw.timelineDotRow}>
@@ -129,7 +147,7 @@ export default function PaywallStep({ onNext }: { onNext: () => void }) {
         </Animated.View>
 
         {/* Pricing Cards */}
-        <Animated.View entering={FadeInUp.duration(500).delay(240)} style={pw.plans}>
+        <Animated.View entering={FadeInUp.duration(500).delay(360)} style={pw.plans}>
           {plans.map((plan) => {
             const active = selected === plan.id;
             return (
@@ -156,7 +174,7 @@ export default function PaywallStep({ onNext }: { onNext: () => void }) {
         </Animated.View>
 
         {/* Value Prop */}
-        <Animated.View entering={FadeInUp.duration(400).delay(360)} style={pw.valueProp}>
+        <Animated.View entering={FadeInUp.duration(400).delay(480)} style={pw.valueProp}>
           <View style={pw.shieldIcon}>
             <Ionicons name="shield-checkmark" size={16} color={GOLD} />
           </View>
@@ -165,7 +183,7 @@ export default function PaywallStep({ onNext }: { onNext: () => void }) {
       </ScrollView>
 
       {/* Fixed bottom CTA */}
-      <Animated.View entering={FadeInDown.duration(500).delay(400)} style={pw.bottomCta}>
+      <Animated.View entering={FadeInDown.duration(500).delay(520)} style={pw.bottomCta}>
         <Animated.View style={btnStyle}>
           <Pressable
             onPress={handleSubscribe}
@@ -230,6 +248,33 @@ const pw = StyleSheet.create((theme) => ({
     color: '#C0C0C8',
     lineHeight: 40,
     marginBottom: theme.spacing.xl,
+  },
+
+  // --- Benefits ---
+  benefits: {
+    gap: 12,
+    marginBottom: theme.spacing.xl,
+  },
+  benefitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  benefitIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    borderCurve: 'continuous',
+    backgroundColor: 'rgba(212,175,55,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  benefitText: {
+    fontSize: 15,
+    fontWeight: '300',
+    color: 'rgba(255,255,255,0.75)',
+    letterSpacing: 0.3,
+    flex: 1,
   },
 
   // --- Timeline ---
